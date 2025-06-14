@@ -1,0 +1,4 @@
+# تجاهل ملفات حساسة
+.env
+data/
+node_modules/

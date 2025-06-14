@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>رفع ملف نصي - RAG</title>
+</head>
+<body>
+  <h2>رفع ملف نصي للدردشة مع محتواه</h2>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" accept=".txt" required>
+    <button type="submit">رفع الملف</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    document.getElementById('uploadForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      const res = await fetch('/api/rag/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      document.getElementById('result').innerText = JSON.stringify(data, null, 2);
+    };
+  </script>
+</body>
+</html>

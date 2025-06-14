@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Clone</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+    .image-upload-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin-left: 0;
+    }
+    .image-upload-btn {
+        background: linear-gradient(90deg, #3a8dde 0%, #00e6d0 100%);
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 1.2rem;
+        margin-left: 0;
+        margin-right: 0;
+        transition: background 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+        border: none;
+        outline: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .image-upload-btn:hover {
+        background: linear-gradient(90deg, #00e6d0 0%, #3a8dde 100%);
+    }
+    .file-upload-label {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        margin-left: 0;
+    }
+    .file-upload-btn {
+        background: linear-gradient(90deg, #3a8dde 0%, #00e6d0 100%);
+        color: #fff;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 1.2rem;
+        margin-left: 0;
+        margin-right: 0;
+        transition: background 0.2s;
+        box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+        border: none;
+        outline: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .file-upload-btn:hover {
+        background: linear-gradient(90deg, #00e6d0 0%, #3a8dde 100%);
+    }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h1><span style="font-family: 'Segoe UI', cursive; font-size: 2.2rem; letter-spacing: 1px;">💬 ChatGPT Clone</span></h1>
+        <div class="messages" id="messages"></div>
+        <form id="chat-form" autocomplete="off" enctype="multipart/form-data">
+            <input type="text" id="message-input" placeholder="Type your message..." autocomplete="off">
+            <label for="image-input" class="image-upload-label" title="Attach image">
+                <input type="file" id="image-input" accept="image/*" style="display:none;">
+                <span class="image-upload-btn">📷</span>
+            </label>
+            <label for="file-input" class="file-upload-label" title="Attach file">
+                <input type="file" id="file-input" style="display:none;">
+                <span class="file-upload-btn">📎</span>
+            </label>
+            <button type="submit">Send</button>
+        </form>
+        <div style="text-align:center; margin-top:18px; font-size:0.95em; color:#00e6d0a0; letter-spacing:1px;">Made with ❤️ | <a href="https://openai.com/" style="color:#3a8dde; text-decoration:none;">OpenAI</a></div>
+    </div>
+    <script>
+        const messagesDiv = document.getElementById('messages');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const imageInput = document.getElementById('image-input');
+        const fileInput = document.getElementById('file-input');
+        let messages = JSON.parse(localStorage.getItem('messages') || '[]');
+
+        function renderMessages() {
+            messagesDiv.innerHTML = '';
+            messages.forEach((msg, idx) => {
+                messagesDiv.innerHTML += `
+                <div class="message" style="position:relative;">
+                    <span onclick="deleteMessage(${idx})" title="حذف الرسالة" style="position:absolute;top:6px;right:6px;cursor:pointer;font-size:1.2em;color:#ff4d4f;transition:color 0.2s;user-select:none;" onmouseover="this.style.color='#d90429'" onmouseout="this.style.color='#ff4d4f'">🗑️</span>
+                    <div style="display: flex; align-items: flex-start; gap: 8px; margin-bottom: 4px;">
+                        <div style="background: #00e6d0; color: #232526; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold;">U</div>
+                        <div><strong>You:</strong> ${msg.user}</div>
+                    </div>
+                    ${msg.file ? `<div style='margin: 6px 0 0 36px; color:#3a8dde; font-size:0.97em;'>📎 ${msg.file}</div>` : ''}
+                    <div style="display: flex; align-items: flex-start; gap: 8px;">
+                        <div style="background: #3a8dde; color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold;">🤖</div>
+                        <div><strong>Bot:</strong> ${msg.bot}</div>
+                    </div>
+                    ${msg.image ? `<img src="${msg.image}" style="max-width:120px; margin-top:8px; border-radius:8px;">` : ''}
+                </div>
+                `;
+            });
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        window.deleteMessage = function(idx) {
+            if (confirm('هل أنت متأكد أنك تريد حذف هذه الرسالة؟')) {
+                messages.splice(idx, 1);
+                localStorage.setItem('messages', JSON.stringify(messages));
+                renderMessages();
+            }
+        }
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userMessage = messageInput.value.trim();
+            const imageFile = imageInput.files[0];
+            const file = fileInput.files[0];
+            // إذا لم يوجد نص ولا صورة ولا ملف لا ترسل
+            if (!userMessage && !imageFile && !file) return;
+            let imageDataUrl = '';
+            if (imageFile) {
+                imageDataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(imageFile);
+                });
+            }
+            let fileData = '';
+            let fileName = '';
+            if (file) {
+                fileName = file.name;
+                fileData = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+                // Log بيانات الملف في الكونسول
+                console.log('fileName:', fileName);
+                console.log('fileData (start):', fileData ? fileData.slice(0, 100) : '');
+            }
+            // إذا لم يوجد نص وأرسل صورة فقط، ضع رسالة افتراضية
+            let userMsgToSend = userMessage;
+            if (!userMsgToSend && imageDataUrl) {
+                userMsgToSend = '';
+            }
+            messages.push({ user: userMsgToSend || '[صورة فقط]', bot: '...', image: imageDataUrl, file: fileName });
+            renderMessages();
+            messageInput.value = '';
+            imageInput.value = '';
+            fileInput.value = '';
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userMsgToSend, image: imageDataUrl, file: fileData, fileName })
+                });
+                const data = await res.json();
+                // إذا كان الرد يحتوي على رابط صورة، اعرضها كصورة
+                let botMsg = data.response || 'Error!';
+                let imageUrl = '';
+                // اكتشاف رابط صورة من OpenAI DALL·E أو أي رابط صورة
+                const urlMatch = botMsg.match(/https?:\/\/(oaidalleapiprod[^\s\n]+|[^\s\n]+\.(png|jpg|jpeg|webp))/i);
+                if (urlMatch) {
+                    imageUrl = urlMatch[0];
+                    botMsg = botMsg.replace(imageUrl, '').trim();
+                }
+                messages[messages.length - 1].bot = botMsg;
+                if (imageUrl) messages[messages.length - 1].image = imageUrl;
+            } catch {
+                messages[messages.length - 1].bot = 'Error!';
+            }
+            localStorage.setItem('messages', JSON.stringify(messages));
+            renderMessages();
+        });
+
+        renderMessages();
+    </script>
+</body>
+</html>
